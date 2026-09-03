@@ -14,25 +14,44 @@ data class PlayerUiState(
     val mediaId: String = "",
     val isMovie: Boolean = true,
     val title: String = "",
-    
+
     // Website (Provider)
-    val availableWebsites: List<String> = listOf("VidSrc", "SuperStream", "FlixHQ", "EgyDead", "FaselHD", "Anime4Up", "WitAnime", "CimaLeek", "Asia2TV", "TukTukCinema"),
+    val availableWebsites: List<String> = listOf(
+        "VidSrc",
+        "SuperStream",
+        "FlixHQ",
+        "Goku",
+        "EgyBest",
+        "FaselHD",
+        "EgyDead",
+        "Anime4Up",
+        "WitAnime",
+        "CimaLeek",
+        "Asia2TV",
+        "TukTukCinema",
+        "ArabSeedTV",
+        "ArabSeedWine",
+        "CimaLight",
+        "EgyBestLive",
+        "StarDima",
+        "WatchStarDima"
+    ),
     val currentWebsite: String = "VidSrc",
-    
+
     // Server
     val availableServers: List<String> = emptyList(),
     val currentServer: String = "",
-    
+
     // Quality
     val availableQualities: List<String> = listOf("Auto", "1080p", "720p"),
     val currentQuality: String = "Auto",
-    
+
     // Episodes
     val episodes: List<Episode> = emptyList(),
     val currentEpisodeId: String = "",
     val currentSeasonNumber: Int = 1,
     val currentEpisodeNumber: Int = 1,
-    
+
     // Extracted URL
     val currentVideoUrl: String? = null,
     val extractionUrl: String? = null // The URL to feed to the hidden WebView
@@ -40,14 +59,14 @@ data class PlayerUiState(
 
 class PlayerViewModel : ViewModel() {
     private val tmdbRepo = TmdbMediaRepositoryImpl()
-    
+
     private val _uiState = MutableStateFlow(PlayerUiState())
     val uiState: StateFlow<PlayerUiState> = _uiState.asStateFlow()
 
     fun initialize(mediaId: String, isMovie: Boolean, initialTitle: String, directUrl: String? = null) {
         val hasArabic = initialTitle.any { it in '\u0600'..'\u06FF' }
         val isAnime = initialTitle.contains("anime", ignoreCase = true) || initialTitle.contains("أنمي", ignoreCase = true)
-        
+
         val bestWebsite = when {
             hasArabic -> "EgyDead"
             isAnime -> "Anime4Up"
@@ -60,7 +79,7 @@ class PlayerViewModel : ViewModel() {
             title = initialTitle,
             currentWebsite = bestWebsite
         )
-        
+
         if (!directUrl.isNullOrEmpty()) {
             _uiState.value = _uiState.value.copy(currentVideoUrl = directUrl, isLoading = false)
         } else if (!isMovie) {
@@ -69,7 +88,7 @@ class PlayerViewModel : ViewModel() {
             generateExtractionUrl()
         }
     }
-    
+
     private fun loadEpisodes(seriesId: String, seasonNumber: Int) {
         viewModelScope.launch {
             try {
@@ -91,17 +110,17 @@ class PlayerViewModel : ViewModel() {
             }
         }
     }
-    
+
     fun selectWebsite(website: String) {
         _uiState.value = _uiState.value.copy(currentWebsite = website, isLoading = true, currentVideoUrl = null)
         generateExtractionUrl()
     }
-    
+
     fun selectServer(server: String) {
         _uiState.value = _uiState.value.copy(currentServer = server, isLoading = true, currentVideoUrl = null)
         generateExtractionUrl() // In a real app, this might change the iframe URL params
     }
-    
+
     fun selectEpisode(episode: Episode) {
         _uiState.value = _uiState.value.copy(
             currentEpisodeId = episode.id,
@@ -112,7 +131,7 @@ class PlayerViewModel : ViewModel() {
         )
         generateExtractionUrl()
     }
-    
+
     fun setExtractedUrl(url: String) {
         // Only set if we don't already have one, or if it's a new quality selection
         if (_uiState.value.currentVideoUrl != url) {
@@ -122,7 +141,7 @@ class PlayerViewModel : ViewModel() {
             )
         }
     }
-    
+
     fun updateServers(servers: List<String>) {
         if (_uiState.value.availableServers != servers && servers.isNotEmpty()) {
             _uiState.value = _uiState.value.copy(
@@ -131,7 +150,7 @@ class PlayerViewModel : ViewModel() {
             )
         }
     }
-    
+
     private fun generateExtractionUrl() {
         val state = _uiState.value
         val encodedTitle = try {
@@ -154,6 +173,12 @@ class PlayerViewModel : ViewModel() {
                 "CimaLeek" -> "https://cimaleek.com/?s=$encodedTitle"
                 "Asia2TV" -> "https://asia2tv.cc/?s=$encodedTitle"
                 "TukTukCinema" -> "https://tuktukcinema.net/?s=$encodedTitle"
+                "ArabSeedTV" -> "https://arabseed-tv.com/?s=$encodedTitle"
+                "ArabSeedWine" -> "https://www.arabseed.wine/?s=$encodedTitle"
+                "CimaLight" -> "https://e.cimalight.co/search.php?keywords=$encodedTitle"
+                "EgyBestLive" -> "https://egybests.live/?s=$encodedTitle"
+                "StarDima" -> "https://www.stardima.com/search?query=$encodedTitle"
+                "WatchStarDima" -> "https://watch.stardima.com/watch/?s=$encodedTitle"
                 else -> "https://vidsrc.me/embed/movie?tmdb=${state.mediaId}"
             }
         } else {
@@ -170,10 +195,16 @@ class PlayerViewModel : ViewModel() {
                 "CimaLeek" -> "https://cimaleek.com/?s=$encodedTitle"
                 "Asia2TV" -> "https://asia2tv.cc/?s=$encodedTitle"
                 "TukTukCinema" -> "https://tuktukcinema.net/?s=$encodedTitle"
+                "ArabSeedTV" -> "https://arabseed-tv.com/?s=$encodedTitle"
+                "ArabSeedWine" -> "https://www.arabseed.wine/?s=$encodedTitle"
+                "CimaLight" -> "https://e.cimalight.co/search.php?keywords=$encodedTitle"
+                "EgyBestLive" -> "https://egybests.live/?s=$encodedTitle"
+                "StarDima" -> "https://www.stardima.com/search?query=$encodedTitle"
+                "WatchStarDima" -> "https://watch.stardima.com/watch/?s=$encodedTitle"
                 else -> "https://vidsrc.me/embed/tv?tmdb=${state.mediaId}&season=${state.currentSeasonNumber}&episode=${state.currentEpisodeNumber}"
             }
         }
-        
+
         _uiState.value = _uiState.value.copy(extractionUrl = url, isLoading = true)
     }
 }
