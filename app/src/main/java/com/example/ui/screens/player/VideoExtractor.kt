@@ -90,7 +90,7 @@ fun HiddenVideoExtractor(
                                 
                                 // 1. Auto-Click Search Results
                                 if (loc.includes('?s=') || loc.includes('search')) {
-                                    var firstResult = document.querySelector('.Block--Item, .movieItem a, .anime-card a, .post-item a, .item a, .media-block a, .Blocks-Grid-Item a, .grid-item a, .box a, article a, .result-item a, h3 a');
+                                    var firstResult = document.querySelector('.Block--Item, .movieItem a, .anime-card a, .post-item a, .item a, .media-block a, .Blocks-Grid-Item a, .grid-item a, .box a, article a, .result-item a, h3 a, .post a, .thumb a, .title a, .box-item a, .video-item a, .poster a');
                                     if (firstResult && !loc.includes('episode') && !loc.includes('watch')) {
                                         window.location.href = firstResult.href;
                                         return;

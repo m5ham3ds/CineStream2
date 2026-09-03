@@ -190,7 +190,8 @@ fun PlayerScreen(mediaId: String, isMovie: Boolean, title: String, url: String? 
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     CircularProgressIndicator(color = Color(0xFFE50914))
                     Spacer(modifier = Modifier.height(16.dp))
-                    Text("Connecting to ${uiState.currentWebsite} / ${uiState.currentServer}...", color = Color.White)
+                    val serverText = if (uiState.currentServer.isNotEmpty()) " / ${uiState.currentServer}" else ""
+                    Text("Connecting to ${uiState.currentWebsite}$serverText...", color = Color.White)
                 }
             }
         }

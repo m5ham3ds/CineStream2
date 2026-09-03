@@ -20,8 +20,8 @@ data class PlayerUiState(
     val currentWebsite: String = "VidSrc",
     
     // Server
-    val availableServers: List<String> = listOf("Server 1", "Server 2", "VIP Server", "Fast Server"),
-    val currentServer: String = "Server 1",
+    val availableServers: List<String> = emptyList(),
+    val currentServer: String = "",
     
     // Quality
     val availableQualities: List<String> = listOf("Auto", "1080p", "720p"),
@@ -45,10 +45,20 @@ class PlayerViewModel : ViewModel() {
     val uiState: StateFlow<PlayerUiState> = _uiState.asStateFlow()
 
     fun initialize(mediaId: String, isMovie: Boolean, initialTitle: String, directUrl: String? = null) {
+        val hasArabic = initialTitle.any { it in '\u0600'..'\u06FF' }
+        val isAnime = initialTitle.contains("anime", ignoreCase = true) || initialTitle.contains("أنمي", ignoreCase = true)
+        
+        val bestWebsite = when {
+            hasArabic -> "EgyDead"
+            isAnime -> "Anime4Up"
+            else -> "VidSrc"
+        }
+
         _uiState.value = _uiState.value.copy(
             mediaId = mediaId,
             isMovie = isMovie,
-            title = initialTitle
+            title = initialTitle,
+            currentWebsite = bestWebsite
         )
         
         if (!directUrl.isNullOrEmpty()) {
