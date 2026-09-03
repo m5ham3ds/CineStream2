@@ -23,7 +23,8 @@ fun HiddenVideoExtractor(
     isMovie: Boolean = true,
     season: Int = 1,
     episode: Int = 1,
-    onVideoUrlFound: (String) -> Unit
+    onVideoUrlFound: (String) -> Unit,
+    onServersFound: ((List<String>) -> Unit)? = null
 ) {
     AndroidView(
         modifier = Modifier.size(1.dp).alpha(0f), // Completely invisible but active in layout
@@ -45,6 +46,18 @@ fun HiddenVideoExtractor(
                 val cookieManager = CookieManager.getInstance()
                 cookieManager.setAcceptCookie(true)
                 cookieManager.setAcceptThirdPartyCookies(this, true)
+
+                addJavascriptInterface(object {
+                    @android.webkit.JavascriptInterface
+                    fun sendServers(serversStr: String) {
+                        val servers = serversStr.split(",").filter { it.isNotBlank() }
+                        if (servers.isNotEmpty()) {
+                            Handler(Looper.getMainLooper()).post {
+                                onServersFound?.invoke(servers)
+                            }
+                        }
+                    }
+                }, "AndroidBridge")
 
                 webViewClient = object : WebViewClient() {
                     override fun shouldInterceptRequest(
@@ -77,55 +90,64 @@ fun HiddenVideoExtractor(
                                 
                                 // 1. Auto-Click Search Results
                                 if (loc.includes('?s=') || loc.includes('search')) {
-                                    var firstResult = document.querySelector('.movieItem a, .anime-card a, .post-item a, .item a, .media-block a');
-                                    if (firstResult) {
+                                    var firstResult = document.querySelector('.Block--Item, .movieItem a, .anime-card a, .post-item a, .item a, .media-block a, .Blocks-Grid-Item a, .grid-item a, .box a, article a, .result-item a, h3 a');
+                                    if (firstResult && !loc.includes('episode') && !loc.includes('watch')) {
                                         window.location.href = firstResult.href;
                                         return;
                                     }
                                 }
                                 
-                                // 2. Auto-Navigate to Episode
-                                if (!isMovie && (loc.includes('/anime/') || loc.includes('/series/') || loc.includes('/season/') || document.querySelector('.EpsList, .episodes-lists'))) {
+                                // 2. Auto-Navigate to Episode (for Series/Anime)
+                                if (!isMovie) {
                                     var links = document.querySelectorAll('a');
                                     for(var i=0; i<links.length; i++) {
                                         var txt = links[i].innerText.trim();
-                                        if (txt === 'الحلقة ' + epNum || txt === 'حلقه ' + epNum || txt === ''+epNum) {
+                                        if (txt === 'الحلقة ' + epNum || txt === 'حلقه ' + epNum || txt === ''+epNum || txt === 'Episode ' + epNum) {
                                             window.location.href = links[i].href;
                                             return;
                                         }
                                     }
-                                    // Fallback: click first episode if exact not found
-                                    var firstEp = document.querySelector('.EpsList a, .episodes-lists a, .episodes a');
-                                    if (firstEp && !loc.includes('episode')) {
-                                        window.location.href = firstEp.href;
-                                        return;
+                                    // Fallback: click first episode if exact not found and we are on a season/series page
+                                    if (!loc.includes('episode') && !loc.includes('ep-')) {
+                                        var firstEp = document.querySelector('.EpsList a, .episodes-lists a, .episodes a, .episode-link');
+                                        if (firstEp) {
+                                            window.location.href = firstEp.href;
+                                            return;
+                                        }
                                     }
                                 }
                                 
-                                // 3. Decode AnimeLuxe / Protected Servers
-                                var luxeServer = document.querySelector('.server-list a.btn, .serversList li');
-                                if (luxeServer && luxeServer.getAttribute('data-url')) {
-                                    try {
-                                        var decodedUrl = atob(luxeServer.getAttribute('data-url'));
-                                        if (decodedUrl && decodedUrl.includes('http')) {
-                                            var iframe = document.createElement('iframe');
-                                            iframe.src = decodedUrl;
-                                            document.body.appendChild(iframe);
-                                        }
-                                    } catch(e){}
-                                }
-                                
-                                // 4. Auto-Play Players (MegaMax, VidSrc, etc)
+                                // 3. Auto-Play Players (MegaMax, VidSrc, etc)
                                 setInterval(function() {
                                     var iframes = document.getElementsByTagName('iframe');
                                     for (var i = 0; i < iframes.length; i++) {
                                         try {
                                             var playBtn = iframes[i].contentWindow.document.querySelector('.play-button, .jw-icon-display, video, .vjs-big-play-button');
                                             if (playBtn) playBtn.click();
+                                            // Also click the iframe itself if possible
                                         } catch(e) {}
                                     }
                                     var localPlay = document.querySelector('.play-button, .jw-icon-display, video, .vjs-big-play-button');
                                     if (localPlay) localPlay.click();
+                                    
+                                    // Some sites need us to click a watch button first
+                                    var watchBtn = document.querySelector('.watch-btn, #watch-btn, a.watch, .btn-watch');
+                                    if(watchBtn && !loc.includes('watch')) watchBtn.click();
+                                    
+                                    // Some sites use servers list to load iframe
+                                    var serverList = document.querySelectorAll('ul.servers li, .server-list li, .serversList li, .watch-servers li, .list-servers li');
+                                    var serverBtn = document.querySelector('ul.servers li, .server-list li');
+                                    if(serverBtn && document.getElementsByTagName('iframe').length === 0) serverBtn.click();
+                                    
+                                    // Send servers back to Kotlin
+                                    if (serverList && serverList.length > 0 && typeof AndroidBridge !== 'undefined') {
+                                        var serverNames = [];
+                                        for(var i=0; i<serverList.length; i++) {
+                                            serverNames.push(serverList[i].innerText.trim());
+                                        }
+                                        AndroidBridge.sendServers(serverNames.join(','));
+                                    }
+                                    
                                 }, 1500);
                             })();
                         """.trimIndent()

@@ -915,6 +915,7 @@ navController.navigate(Screen.SeriesDetails.createRoute(it)) }
                         mediaId = mediaId, 
                         isMovie = isMovie, 
                         title = decodedTitle, 
+                        url = if (decodedUrl.isNotEmpty()) decodedUrl else null,
                         onBack = { navController.popBackStack() }
                     )
                 }

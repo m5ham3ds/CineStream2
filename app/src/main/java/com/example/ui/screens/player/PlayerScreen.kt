@@ -58,7 +58,7 @@ fun PlayerScreen(mediaId: String, isMovie: Boolean, title: String, url: String? 
     val context = LocalContext.current
     var showDownloadSheet by remember { mutableStateOf(false) }
     var showControls by remember { mutableStateOf(true) }
-    var isPlaying by remember { mutableStateOf(true) }
+    var isPlaying by remember { mutableStateOf(false) }
     var currentTime by remember { mutableStateOf(0L) }
     var totalDuration by remember { mutableStateOf(0L) }
     var brightness by remember { mutableStateOf(0.5f) }
@@ -178,6 +178,9 @@ fun PlayerScreen(mediaId: String, isMovie: Boolean, title: String, url: String? 
                 episode = uiState.currentEpisodeNumber,
                 onVideoUrlFound = { extractedUrl ->
                     viewModel.setExtractedUrl(extractedUrl)
+                },
+                onServersFound = { servers ->
+                    viewModel.updateServers(servers)
                 }
             )
         }

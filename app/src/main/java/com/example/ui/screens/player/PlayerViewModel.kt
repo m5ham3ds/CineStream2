@@ -113,22 +113,37 @@ class PlayerViewModel : ViewModel() {
         }
     }
     
+    fun updateServers(servers: List<String>) {
+        if (_uiState.value.availableServers != servers && servers.isNotEmpty()) {
+            _uiState.value = _uiState.value.copy(
+                availableServers = servers,
+                currentServer = servers.first()
+            )
+        }
+    }
+    
     private fun generateExtractionUrl() {
         val state = _uiState.value
+        val encodedTitle = try {
+            java.net.URLEncoder.encode(state.title, "UTF-8")
+        } catch (e: Exception) {
+            state.title
+        }
+
         val url = if (state.isMovie) {
             when (state.currentWebsite) {
                 "VidSrc" -> "https://vidsrc.me/embed/movie?tmdb=${state.mediaId}"
                 "SuperStream" -> "https://multiembed.mov/?video_id=${state.mediaId}&tmdb=1"
                 "FlixHQ" -> "https://vidsrc.to/embed/movie/${state.mediaId}"
                 "Goku" -> "https://vidsrc.cc/v2/embed/movie/${state.mediaId}"
-                "EgyBest" -> "https://egydead.icu/movie/${state.mediaId}"
-                "FaselHD" -> "https://faselhd.club/?p=${state.mediaId}"
-                "EgyDead" -> "https://egydead.icu/movie/${state.mediaId}"
-                "Anime4Up" -> "https://anime4up.com/?s=${state.title}" // Uses search
-                "WitAnime" -> "https://witanime.com/?search_param=animes&s=${state.title}"
-                "CimaLeek" -> "https://cimaleek.com/?s=${state.title}"
-                "Asia2TV" -> "https://asia2tv.com/?s=${state.title}"
-                "TukTukCinema" -> "https://tuktukcinema.com/?s=${state.title}"
+                "EgyBest" -> "https://egydead.icu/?s=$encodedTitle"
+                "FaselHD" -> "https://faselhd.club/?s=$encodedTitle"
+                "EgyDead" -> "https://egydead.icu/?s=$encodedTitle"
+                "Anime4Up" -> "https://anime4up.com/?s=$encodedTitle"
+                "WitAnime" -> "https://witanime.com/?search_param=animes&s=$encodedTitle"
+                "CimaLeek" -> "https://cimaleek.com/?s=$encodedTitle"
+                "Asia2TV" -> "https://asia2tv.cc/?s=$encodedTitle"
+                "TukTukCinema" -> "https://tuktukcinema.net/?s=$encodedTitle"
                 else -> "https://vidsrc.me/embed/movie?tmdb=${state.mediaId}"
             }
         } else {
@@ -137,14 +152,14 @@ class PlayerViewModel : ViewModel() {
                 "SuperStream" -> "https://multiembed.mov/?video_id=${state.mediaId}&tmdb=1&s=${state.currentSeasonNumber}&e=${state.currentEpisodeNumber}"
                 "FlixHQ" -> "https://vidsrc.to/embed/tv/${state.mediaId}/${state.currentSeasonNumber}/${state.currentEpisodeNumber}"
                 "Goku" -> "https://vidsrc.cc/v2/embed/tv/${state.mediaId}/${state.currentSeasonNumber}/${state.currentEpisodeNumber}"
-                "EgyBest" -> "https://egydead.icu/episode/${state.mediaId}-season-${state.currentSeasonNumber}-ep-${state.currentEpisodeNumber}"
-                "FaselHD" -> "https://faselhd.club/?p=${state.mediaId}&s=${state.currentSeasonNumber}&e=${state.currentEpisodeNumber}"
-                "EgyDead" -> "https://egydead.icu/episode/${state.mediaId}-season-${state.currentSeasonNumber}-ep-${state.currentEpisodeNumber}"
-                "Anime4Up" -> "https://anime4up.com/?s=${state.title}" // Will require WebView to click first result
-                "WitAnime" -> "https://witanime.com/?search_param=animes&s=${state.title}"
-                "CimaLeek" -> "https://cimaleek.com/?s=${state.title}"
-                "Asia2TV" -> "https://asia2tv.com/?s=${state.title}"
-                "TukTukCinema" -> "https://tuktukcinema.com/?s=${state.title}"
+                "EgyBest" -> "https://egydead.icu/?s=$encodedTitle"
+                "FaselHD" -> "https://faselhd.club/?s=$encodedTitle"
+                "EgyDead" -> "https://egydead.icu/?s=$encodedTitle"
+                "Anime4Up" -> "https://anime4up.com/?s=$encodedTitle"
+                "WitAnime" -> "https://witanime.com/?search_param=animes&s=$encodedTitle"
+                "CimaLeek" -> "https://cimaleek.com/?s=$encodedTitle"
+                "Asia2TV" -> "https://asia2tv.cc/?s=$encodedTitle"
+                "TukTukCinema" -> "https://tuktukcinema.net/?s=$encodedTitle"
                 else -> "https://vidsrc.me/embed/tv?tmdb=${state.mediaId}&season=${state.currentSeasonNumber}&episode=${state.currentEpisodeNumber}"
             }
         }
